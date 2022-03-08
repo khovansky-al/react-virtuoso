@@ -2,7 +2,7 @@
 .DS_Store
 node_modules
 .cache
-dist
+# dist
 examples/__examples.jsx
 examples/__examples.html
 
