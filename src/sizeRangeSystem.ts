@@ -2,6 +2,7 @@ import * as u from '@virtuoso.dev/urx'
 import { domIOSystem } from './domIOSystem'
 import { UP, DOWN, ScrollDirection } from './stateFlagsSystem'
 import { tupleComparator } from './comparators'
+import { loggerSystem, LogLevel } from './loggerSystem'
 
 export type NumberTuple = [number, number]
 export type Overscan = number | { main: number; reverse: number }
@@ -29,7 +30,7 @@ function getViewportIncrease(value: ViewportIncrease, end: ListEnd) {
 }
 
 export const sizeRangeSystem = u.system(
-  ([{ scrollTop, viewportHeight, deviation, headerHeight }]) => {
+  ([{ scrollTop, viewportHeight, deviation, headerHeight }, { log }]) => {
     const listBoundary = u.stream<NumberTuple>()
     const topListHeight = u.statefulStream(0)
     const fixedHeaderHeight = u.statefulStream(0)
@@ -47,7 +48,8 @@ export const sizeRangeSystem = u.system(
           u.duc(topListHeight),
           u.duc(fixedHeaderHeight),
           u.duc(deviation),
-          u.duc(increaseViewportBy)
+          u.duc(increaseViewportBy),
+          log
         ),
         u.map(
           ([
@@ -60,7 +62,9 @@ export const sizeRangeSystem = u.system(
             fixedHeaderHeight,
             deviation,
             increaseViewportBy,
+            log,
           ]) => {
+            log('[size range: scrollTop, deviation]', `${scrollTop}, ${deviation}`, LogLevel.DEBUG)
             const top = scrollTop - deviation
             const stickyHeaderHeight = topListHeight + fixedHeaderHeight
             const headerVisible = Math.max(headerHeight - top, 0)
@@ -114,6 +118,6 @@ export const sizeRangeSystem = u.system(
       visibleRange,
     }
   },
-  u.tup(domIOSystem),
+  u.tup(domIOSystem, loggerSystem),
   { singleton: true }
 )

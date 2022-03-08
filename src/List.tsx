@@ -29,6 +29,7 @@ import { positionStickyCssValue } from './utils/positionStickyCssValue'
 import useWindowViewportRectRef from './hooks/useWindowViewportRect'
 import { correctItemSize } from './utils/correctItemSize'
 import { ScrollerProps } from '.'
+import { LogLevel } from './loggerSystem'
 
 export function identity<T>(value: T) {
   return value
@@ -204,6 +205,8 @@ export const Items = React.memo(function VirtuosoItems({ showTopList = false }: 
   const paddingTopAddition = useEmitterValue('paddingTopAddition')
   const firstItemIndex = useEmitterValue('firstItemIndex')
   const statefulTotalCount = useEmitterValue('statefulTotalCount')
+
+  log('top padding', listState.offsetTop, LogLevel.DEBUG)
 
   const containerStyle: CSSProperties = showTopList
     ? {}

@@ -110,9 +110,16 @@ export default function useScrollTop(
     scrollerElement.scrollTo(location)
   }
 
+  /* eslint-disable no-console */
   function scrollByCallback(location: ScrollToOptions) {
     if (scrollTopTarget.current === null) {
+      console.log(`%c before scroll ${(scrollerRef.current as HTMLElement).scrollTop} scrolling by ${location.top}`, 'color: red')
       scrollerRef.current!.scrollBy(location)
+      console.log('after scroll', (scrollerRef.current as HTMLElement).scrollTop)
+      scrollContainerStateCallback([
+        Math.max((scrollerRef.current as HTMLElement).scrollTop, 0),
+        (scrollerRef.current as HTMLElement).scrollHeight,
+      ])
     }
   }
 

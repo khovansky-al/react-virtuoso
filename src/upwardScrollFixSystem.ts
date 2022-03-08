@@ -20,9 +20,9 @@ export const upwardScrollFixSystem = u.system(
     const deviationOffset = u.streamFromEmitter(
       u.pipe(
         listState,
-        u.withLatestFrom(lastJumpDueToItemResize),
+        u.withLatestFrom(lastJumpDueToItemResize, deviation, scrollTop, log),
         u.scan(
-          ([, prevItems, prevTotalCount], [{ items, totalCount }, lastJumpDueToItemResize]) => {
+          ([, prevItems, prevTotalCount], [{ items, totalCount }, lastJumpDueToItemResize, existingDeviation, scrollTop, log]) => {
             let newDev = 0
             if (prevTotalCount === totalCount) {
               if (prevItems.length > 0 && items.length > 0) {
@@ -52,6 +52,13 @@ export const upwardScrollFixSystem = u.system(
               if (newDev !== 0) {
                 newDev += lastJumpDueToItemResize
               }
+            }
+
+            log('[last jump]', lastJumpDueToItemResize, LogLevel.DEBUG)
+            log('[target scrollTop with deviation]', `${scrollTop}, ${existingDeviation}, ${scrollTop - existingDeviation}`, LogLevel.DEBUG)
+            if (scrollTop < existingDeviation) {
+              log('corrected', existingDeviation - scrollTop, LogLevel.DEBUG)
+              newDev = existingDeviation - scrollTop
             }
 
             return [newDev, items, totalCount] as [number, ListItem<any>[], number]
@@ -84,12 +91,17 @@ export const upwardScrollFixSystem = u.system(
     // restore the position and reset the glitching
     u.subscribe(
       u.pipe(
-        u.combineLatest(u.statefulStreamFromEmitter(isScrolling, false), deviation),
-        u.filter(([is, deviation]) => !is && deviation !== 0),
-        u.map(([_, deviation]) => deviation),
+        u.combineLatest(u.statefulStreamFromEmitter(isScrolling, false), deviation, log),
+        u.filter(([is, deviation, log]) => {
+          log('filter predicate', `isScrolling: ${is}, deviation: ${deviation}`, LogLevel.DEBUG)
+          return !is && deviation !== 0
+        }),
+        // u.map(([_, deviation]) => deviation),
         u.throttleTime(1)
       ),
-      (offset) => {
+      ([isScrolling, offset, log]) => {
+        if (isScrolling) return
+
         if (offset > 0) {
           u.publish(scrollBy, { top: -offset, behavior: 'auto' })
           u.publish(deviation, 0)
@@ -97,6 +109,7 @@ export const upwardScrollFixSystem = u.system(
           u.publish(deviation, 0)
           u.publish(scrollBy, { top: -offset, behavior: 'auto' })
         }
+        log('published offset', offset, LogLevel.DEBUG)
       }
     )
 

@@ -9,6 +9,7 @@ import { sizeRangeSystem } from './sizeRangeSystem'
 import { Data, originalIndexFromItemIndex, SizeState, sizeSystem, hasGroups, rangesWithinOffsets } from './sizeSystem'
 import { stateFlagsSystem } from './stateFlagsSystem'
 import { rangeComparator, tupleComparator } from './comparators'
+import { loggerSystem, LogLevel } from './loggerSystem'
 
 export type ListItems = ListItem<unknown>[]
 export interface TopListState {
@@ -142,6 +143,7 @@ export const listStateSystem = u.system(
     { topListHeight },
     stateFlags,
     { didMount },
+    { log },
   ]) => {
     const topItemsIndexes = u.statefulStream<Array<number>>([])
     const itemsRendered = u.stream<ListItems>()
@@ -159,7 +161,8 @@ export const listStateSystem = u.system(
           scrolledToInitialItem,
           u.duc(topItemsIndexes),
           u.duc(firstItemIndex),
-          data
+          data,
+          log
         ),
         u.filter(([mount]) => mount),
         u.map(
@@ -173,7 +176,9 @@ export const listStateSystem = u.system(
             topItemsIndexes,
             firstItemIndex,
             data,
+            log,
           ]) => {
+            log('offsets [start, end]', `${startOffset}, ${endOffset}`, LogLevel.DEBUG)
             const sizesValue = sizes
             const { sizeTree, offsetTree } = sizesValue
 
@@ -255,6 +260,8 @@ export const listStateSystem = u.system(
                 }
               }
             })
+
+            // console.log('will be rendering items', items)
 
             return buildListState(items, topItems, totalCount, sizesValue, firstItemIndex)
           }
@@ -341,7 +348,8 @@ export const listStateSystem = u.system(
     initialTopMostItemIndexSystem,
     scrollToIndexSystem,
     stateFlagsSystem,
-    propsReadySystem
+    propsReadySystem,
+    loggerSystem
   ),
   { singleton: true }
 )
